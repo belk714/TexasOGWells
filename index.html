@@ -80,7 +80,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 </head>
 <body>
 <div id="header">
-  <h1>🛢️ Texas O&G Wells — Permian Basin</h1>
+  <h1>🛢️ Texas O&G Wells</h1>
   <div id="stats">Loading...</div>
 </div>
 <div id="map"></div>
@@ -95,6 +95,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
       <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="oil" checked onchange="applyFilters()"> 🟢 Oil</label>
       <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="gas" checked onchange="applyFilters()"> 🔴 Gas</label>
       <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="both" checked onchange="applyFilters()"> 🟡 Oil & Gas</label>
+    </div>
+  </div>
+
+  <!-- Basin -->
+  <div class="filter-section">
+    <div class="filter-header" onclick="toggleSection(this)">Basin <span class="arrow open">▶</span></div>
+    <div class="filter-body open">
+      <label class="filter-opt"><input type="checkbox" class="basin-cb" value="Permian" checked onchange="applyFilters()"> Permian</label>
+      <label class="filter-opt"><input type="checkbox" class="basin-cb" value="Eagle Ford" checked onchange="applyFilters()"> Eagle Ford</label>
+      <label class="filter-opt"><input type="checkbox" class="basin-cb" value="Barnett" checked onchange="applyFilters()"> Barnett</label>
+      <label class="filter-opt"><input type="checkbox" class="basin-cb" value="Haynesville" checked onchange="applyFilters()"> Haynesville</label>
+      <label class="filter-opt"><input type="checkbox" class="basin-cb" value="Other" checked onchange="applyFilters()"> Other</label>
     </div>
   </div>
 
@@ -120,7 +132,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
     <div class="legend-item"><div class="legend-dot" style="background:#4daf4a"></div> Oil Well</div>
     <div class="legend-item"><div class="legend-dot" style="background:#e94560"></div> Gas Well</div>
     <div class="legend-item"><div class="legend-dot" style="background:#f5c542"></div> Oil & Gas Well</div>
-    <p style="font-size:11px;color:#666;margin-top:8px">Well types from Texas RRC (SYMNUM classification). Operators from FracFocus disclosure registry. 27,806 verified wells.</p>
+    <p style="font-size:11px;color:#666;margin-top:8px">Well types from Texas RRC (SYMNUM classification). Operators from FracFocus disclosure registry. 37,456 verified wells across Permian, Eagle Ford, Barnett, Haynesville basins.</p>
   </div>
 
   <div class="legend-section" style="border-top:1px solid #0f3460">
@@ -136,7 +148,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-const map=L.map('map',{center:[31.8,-102],zoom:7,zoomControl:true});
+const map=L.map('map',{center:[31.5,-99.5],zoom:6,zoomControl:true});
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
 
 const WELL_COLORS={oil:'#4daf4a',gas:'#e94560',both:'#f5c542'};
@@ -189,6 +201,7 @@ function applyFilters(){
   clusterGroup.clearLayers();
 
   const types=new Set([...document.querySelectorAll('.wtype-cb:checked')].map(c=>c.value));
+  const basins=new Set([...document.querySelectorAll('.basin-cb:checked')].map(c=>c.value));
   const county=document.getElementById('county-filter').value;
   const ops=new Set([...document.querySelectorAll('.op-cb:checked')].map(c=>c.dataset.op));
 
@@ -196,6 +209,7 @@ function applyFilters(){
   wells.forEach(w=>{
     if(!ops.has(w.operator))return;
     if(!types.has(w.type))return;
+    if(!basins.has(w.basin))return;
     if(county&&w.county!==county)return;
     
     const color=WELL_COLORS[w.type]||'#888';
@@ -206,6 +220,7 @@ function applyFilters(){
       <span class="popup-label">API</span><div class="popup-value">${w.api}</div>
       <span class="popup-label">Operator</span><div class="popup-value">${w.operator}</div>
       <span class="popup-label">County</span><div class="popup-value">${w.county}</div>
+      <span class="popup-label">Basin</span><div class="popup-value">${w.basin}</div>
     `,{maxWidth:280});
     
     clusterGroup.addLayer(c);
@@ -231,7 +246,7 @@ function toggleSection(el){
 }
 
 function resetFilters(){
-  document.querySelectorAll('.wtype-cb,.op-cb').forEach(c=>c.checked=true);
+  document.querySelectorAll('.wtype-cb,.basin-cb,.op-cb').forEach(c=>c.checked=true);
   document.getElementById('county-filter').value='';
   allOpsVisible=true;
   applyFilters();
