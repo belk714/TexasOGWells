@@ -1,57 +1,46 @@
 [
   {
     "name": "Pioneer/ExxonMobil",
-    "color": "#FF6B6B",
-    "count": 9554
+    "count": 8141
   },
   {
     "name": "Other",
-    "color": "#888888",
-    "count": 5000
+    "count": 4196
   },
   {
     "name": "Occidental Petroleum",
-    "color": "#45B7D1",
-    "count": 3716
-  },
-  {
-    "name": "Coterra Energy",
-    "color": "#BB8FCE",
-    "count": 3488
+    "count": 3256
   },
   {
     "name": "Apache/APA",
-    "color": "#F7DC6F",
-    "count": 3336
+    "count": 2767
+  },
+  {
+    "name": "Coterra Energy",
+    "count": 2757
   },
   {
     "name": "Diamondback Energy",
-    "color": "#FFEAA7",
-    "count": 2821
-  },
-  {
-    "name": "Chevron",
-    "color": "#4ECDC4",
     "count": 2307
   },
   {
-    "name": "EOG Resources",
-    "color": "#DDA0DD",
-    "count": 1024
-  },
-  {
-    "name": "Devon Energy",
-    "color": "#98D8C8",
-    "count": 802
+    "name": "Chevron",
+    "count": 1958
   },
   {
     "name": "ConocoPhillips",
-    "color": "#96CEB4",
-    "count": 733
+    "count": 694
+  },
+  {
+    "name": "Devon Energy",
+    "count": 623
+  },
+  {
+    "name": "EOG Resources",
+    "count": 618
   },
   {
     "name": "Callon Petroleum",
-    "color": "#85C1E9",
-    "count": 582
+    "count": 489
   }
 ]

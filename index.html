@@ -15,12 +15,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 #header h1{font-size:18px;color:#e94560;font-weight:700;white-space:nowrap}
 #stats{margin-left:30px;font-size:13px;color:#a0a0b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* Panel */
 #panel{position:absolute;top:50px;right:0;width:300px;background:#16213e;z-index:1000;height:calc(100vh - 50px);overflow-y:auto;border-left:1px solid #0f3460;transition:transform .3s ease}
 #panel.hidden{transform:translateX(100%)}
 #panel h2{padding:12px 15px;font-size:14px;color:#e94560;border-bottom:1px solid #0f3460;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#16213e;z-index:2}
 
-/* Filter sections */
 .filter-section{border-bottom:1px solid #0f3460;overflow:hidden}
 .filter-header{padding:10px 15px;font-size:13px;font-weight:600;color:#a0a0b0;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;-webkit-tap-highlight-color:transparent}
 .filter-header:hover{background:#1a1a3e}
@@ -29,7 +27,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 .filter-body{padding:0 15px 10px;max-height:0;overflow:hidden;transition:max-height .3s ease}
 .filter-body.open{max-height:500px;overflow-y:auto}
 
-/* Operator rows */
 .op-row{display:flex;align-items:center;padding:6px 0;cursor:pointer;transition:background .2s;-webkit-tap-highlight-color:transparent}
 .op-row:active{background:#1a1a3e}
 .op-color{width:14px;height:14px;border-radius:50%;margin-right:10px;flex-shrink:0}
@@ -37,25 +34,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 .op-count{font-size:11px;color:#888;margin-left:5px}
 .op-row input,.filter-body input[type=checkbox]{margin-right:8px;width:18px;height:18px;accent-color:#e94560;flex-shrink:0}
 
-/* Filter checkboxes */
 .filter-opt{display:flex;align-items:center;padding:4px 0;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .filter-opt:active{background:#1a1a3e}
 
-/* Select dropdown */
 .filter-body select{width:100%;padding:8px;background:#1a1a2e;color:#e0e0e0;border:1px solid #0f3460;border-radius:4px;font-size:13px;margin-top:4px}
 
-/* Toggle button */
 #toggle-panel{position:absolute;top:60px;right:10px;z-index:1001;background:#16213e;border:1px solid #0f3460;color:#e0e0e0;padding:8px 12px;border-radius:4px;cursor:pointer;font-size:13px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 #toggle-panel:active{background:#0f3460}
 
-/* Legend */
 .legend-section{padding:10px 15px;border-top:1px solid #0f3460}
 .legend-section h3{font-size:12px;color:#888;margin-bottom:8px}
 .legend-item{display:flex;align-items:center;font-size:12px;margin-bottom:4px}
-.legend-well{width:10px;height:10px;border-radius:50%;background:#e94560;margin-right:8px}
-.legend-permit{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:12px solid #e94560;margin-right:8px}
+.legend-dot{width:10px;height:10px;border-radius:50%;margin-right:8px}
 
-/* Leaflet overrides */
 .leaflet-popup-content-wrapper{background:#16213e!important;color:#e0e0e0!important;border-radius:8px!important;border:1px solid #0f3460;max-width:320px!important}
 .leaflet-popup-tip{background:#16213e!important}
 .leaflet-popup-content{font-size:13px;line-height:1.6;margin:10px 14px!important}
@@ -67,15 +58,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 .leaflet-control-attribution{background:rgba(22,33,62,.8)!important;color:#666!important}
 .leaflet-control-attribution a{color:#888!important}
 
-/* Production chart in popup */
-.prod-chart-wrap{margin-top:8px}
-.prod-chart-wrap canvas{width:100%!important;height:120px!important}
-
-/* Small button */
 .sm-btn{background:none;border:1px solid #0f3460;color:#e0e0e0;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:11px;-webkit-tap-highlight-color:transparent}
 .sm-btn:active{background:#0f3460}
 
-/* Mobile */
+.popup-label{color:#888;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+.popup-value{font-size:13px;margin-bottom:4px}
+
 @media(max-width:768px){
   #header h1{font-size:15px}
   #stats{display:none}
@@ -92,39 +80,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 </head>
 <body>
 <div id="header">
-  <h1>🛢️ Texas O&G Wells</h1>
+  <h1>🛢️ Texas O&G Wells — Permian Basin</h1>
   <div id="stats">Loading...</div>
 </div>
 <div id="map"></div>
 <button id="toggle-panel" onclick="togglePanel()">☰ Filters</button>
 <div id="panel">
-  <h2>Filters & Layers <button class="sm-btn" onclick="resetFilters()">Reset</button></h2>
-
-  <!-- Layers -->
-  <div class="filter-section">
-    <div class="filter-header" onclick="toggleSection(this)">Layers <span class="arrow open">▶</span></div>
-    <div class="filter-body open">
-      <label class="filter-opt"><input type="checkbox" id="layer-wells" checked onchange="applyFilters()"> Producing Wells</label>
-      <label class="filter-opt"><input type="checkbox" id="layer-permits" checked onchange="applyFilters()"> Drilling Permits</label>
-    </div>
-  </div>
+  <h2>Filters <button class="sm-btn" onclick="resetFilters()">Reset</button></h2>
 
   <!-- Well Type -->
   <div class="filter-section">
     <div class="filter-header" onclick="toggleSection(this)">Well Type <span class="arrow open">▶</span></div>
     <div class="filter-body open">
-      <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="oil" checked onchange="applyFilters()"> Oil</label>
-      <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="gas" checked onchange="applyFilters()"> Gas</label>
-      <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="both" checked onchange="applyFilters()"> Oil & Gas</label>
-    </div>
-  </div>
-
-  <!-- Status -->
-  <div class="filter-section">
-    <div class="filter-header" onclick="toggleSection(this)">Status <span class="arrow open">▶</span></div>
-    <div class="filter-body open">
-      <label class="filter-opt"><input type="checkbox" class="status-cb" value="active" checked onchange="applyFilters()"> Active</label>
-      <label class="filter-opt"><input type="checkbox" class="status-cb" value="inactive" checked onchange="applyFilters()"> Inactive</label>
+      <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="oil" checked onchange="applyFilters()"> 🟢 Oil</label>
+      <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="gas" checked onchange="applyFilters()"> 🔴 Gas</label>
+      <label class="filter-opt"><input type="checkbox" class="wtype-cb" value="both" checked onchange="applyFilters()"> 🟡 Oil & Gas</label>
     </div>
   </div>
 
@@ -147,20 +117,31 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 
   <div class="legend-section">
     <h3>Legend</h3>
-    <div class="legend-item"><div class="legend-well"></div> Active Well</div>
-    <div class="legend-item"><div class="legend-well" style="background:#666"></div> Inactive Well</div>
-    <div class="legend-item"><div class="legend-permit"></div> Drilling Permit</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4daf4a"></div> Oil Well</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e94560"></div> Gas Well</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f5c542"></div> Oil & Gas Well</div>
+    <p style="font-size:11px;color:#666;margin-top:8px">Well types from Texas RRC (SYMNUM classification). Operators from FracFocus disclosure registry. 27,806 verified wells.</p>
+  </div>
+
+  <div class="legend-section" style="border-top:1px solid #0f3460">
+    <h3>Data Sources</h3>
+    <p style="font-size:11px;color:#666;line-height:1.5">
+      📍 Coordinates & operators: FracFocus.org<br>
+      🏷️ Well type (oil/gas): Texas RRC GIS (SYMNUM)<br>
+      ⚠️ No fake or estimated data
+    </p>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-const map=L.map('map',{center:[31.5,-99.5],zoom:6,zoomControl:true});
+const map=L.map('map',{center:[31.8,-102],zoom:7,zoomControl:true});
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
 
-let operators=[],wells=[],permits=[];
+const WELL_COLORS={oil:'#4daf4a',gas:'#e94560',both:'#f5c542'};
+
+let operators=[],wells=[];
 let clusterGroup=L.markerClusterGroup({maxClusterRadius:40,spiderfyOnMaxZoom:true,showCoverageOnHover:false,
   iconCreateFunction:c=>{
     const n=c.getChildCount();
@@ -170,14 +151,11 @@ let clusterGroup=L.markerClusterGroup({maxClusterRadius:40,spiderfyOnMaxZoom:tru
 map.addLayer(clusterGroup);
 
 let allOpsVisible=true;
-let wellMarkers=[], permitMarkers=[];
-let activeCharts={};
 
 async function loadData(){
-  [operators,wells,permits]=await Promise.all([
+  [operators,wells]=await Promise.all([
     fetch('operators.json').then(r=>r.json()),
-    fetch('wells.json').then(r=>r.json()),
-    fetch('permits.json').then(r=>r.json())
+    fetch('wells.json').then(r=>r.json())
   ]);
   buildCountyFilter();
   buildPanel();
@@ -187,7 +165,6 @@ async function loadData(){
 function buildCountyFilter(){
   const counties=new Set();
   wells.forEach(w=>counties.add(w.county));
-  permits.forEach(p=>counties.add(p.county));
   const sel=document.getElementById('county-filter');
   [...counties].sort().forEach(c=>{
     const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);
@@ -195,144 +172,47 @@ function buildCountyFilter(){
 }
 
 function buildPanel(){
+  // Count wells per operator
+  const opCounts={};
+  wells.forEach(w=>{opCounts[w.operator]=(opCounts[w.operator]||0)+1;});
+  
   document.getElementById('op-list').innerHTML=operators.map(op=>`
     <label class="op-row">
       <input type="checkbox" checked class="op-cb" data-op="${op.name}" onchange="applyFilters()">
-      <div class="op-color" style="background:${op.color}"></div>
       <span class="op-label">${op.name}</span>
-      <span class="op-count">${op.well_count}w/${op.permit_count}p</span>
+      <span class="op-count">${opCounts[op.name]||0}</span>
     </label>
   `).join('');
 }
 
-function getOpColor(name){
-  const op=operators.find(o=>o.name===name);
-  return op?op.color:'#fff';
-}
-
-// Generate realistic declining production curve
-function genProduction(well){
-  const months=[];
-  const spudYear=well.spud_date?parseInt(well.spud_date):2018;
-  const startYear=spudYear;
-  const isOil=well.type==='oil'||well.type==='both';
-  const isGas=well.type==='gas'||well.type==='both';
-  // Seed from API for consistency
-  let seed=0;for(let i=0;i<well.api.length;i++)seed+=well.api.charCodeAt(i);
-  const rng=()=>{seed=(seed*16807+0)%2147483647;return(seed&0xffff)/0xffff};
-
-  const peakOil=isOil?(300+rng()*700):0; // bbl/day
-  const peakGas=isGas?(500+rng()*2000):0; // mcf/day
-  const declineOil=0.06+rng()*0.04; // monthly decline
-  const declineGas=0.05+rng()*0.03;
-  const nMonths=Math.min(60,Math.max(24,(2025-startYear)*12));
-
-  for(let m=0;m<nMonths;m++){
-    const yr=startYear+Math.floor(m/12);
-    const mo=(m%12)+1;
-    const noise=0.85+rng()*0.3;
-    months.push({
-      label:`${yr}-${String(mo).padStart(2,'0')}`,
-      oil:Math.max(0,Math.round(peakOil*Math.exp(-declineOil*m)*noise*30)),
-      gas:Math.max(0,Math.round(peakGas*Math.exp(-declineGas*m)*noise*30))
-    });
-  }
-  return months;
-}
-
-function makeWellPopup(w){
-  const color=w.status==='inactive'?'#666':getOpColor(w.operator);
-  const prod=genProduction(w);
-  const id='chart-'+w.api.replace(/[^a-z0-9]/gi,'');
-  let html=`<strong>${w.type.toUpperCase()} Well</strong><br>
-    API: ${w.api}<br>Operator: ${w.operator}<br>
-    County: ${w.county}<br>Status: ${w.status}<br>
-    ${w.basin?'Basin: '+w.basin+'<br>':''}
-    ${w.spud_date?'Spud: '+w.spud_date+'<br>':''}
-    <div class="prod-chart-wrap"><canvas id="${id}"></canvas></div>`;
-  return {html, id, prod};
-}
-
-// Triangle icon for permits
-function permitIcon(color){
-  const svg=`<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-    <polygon points="10,2 18,18 2,18" fill="none" stroke="${color}" stroke-width="2.5"/>
-  </svg>`;
-  return L.divIcon({html:svg,className:'',iconSize:[20,20],iconAnchor:[10,18],popupAnchor:[0,-12]});
-}
-
 function applyFilters(){
   clusterGroup.clearLayers();
-  wellMarkers=[];permitMarkers=[];
 
-  const showWells=document.getElementById('layer-wells').checked;
-  const showPermits=document.getElementById('layer-permits').checked;
   const types=new Set([...document.querySelectorAll('.wtype-cb:checked')].map(c=>c.value));
-  const statuses=new Set([...document.querySelectorAll('.status-cb:checked')].map(c=>c.value));
   const county=document.getElementById('county-filter').value;
   const ops=new Set([...document.querySelectorAll('.op-cb:checked')].map(c=>c.dataset.op));
 
-  if(showWells){
-    wells.forEach(w=>{
-      if(!ops.has(w.operator))return;
-      if(!types.has(w.type))return;
-      if(!statuses.has(w.status))return;
-      if(county&&w.county!==county)return;
-      const color=w.status==='inactive'?'#666':getOpColor(w.operator);
-      const c=L.circleMarker([w.lat,w.lng],{radius:5,color,fillColor:color,fillOpacity:0.7,weight:1,opacity:0.9});
-      const popup=makeWellPopup(w);
-      c.bindPopup(popup.html,{maxWidth:300});
-      c.on('popupopen',()=>{
-        setTimeout(()=>{
-          const canvas=document.getElementById(popup.id);
-          if(!canvas)return;
-          if(activeCharts[popup.id]){activeCharts[popup.id].destroy();}
-          const labels=popup.prod.map(p=>p.label);
-          const datasets=[];
-          if(w.type==='oil'||w.type==='both'){
-            datasets.push({label:'Oil (bbl)',data:popup.prod.map(p=>p.oil),borderColor:'#4daf4a',backgroundColor:'rgba(77,175,74,.15)',fill:true,pointRadius:0,borderWidth:1.5,tension:0.3});
-          }
-          if(w.type==='gas'||w.type==='both'){
-            datasets.push({label:'Gas (mcf)',data:popup.prod.map(p=>p.gas),borderColor:'#377eb8',backgroundColor:'rgba(55,126,184,.15)',fill:true,pointRadius:0,borderWidth:1.5,tension:0.3,yAxisID:w.type==='both'?'y1':'y'});
-          }
-          const scales={y:{position:'left',grid:{color:'#1a1a3e'},ticks:{color:'#888',font:{size:9}}}};
-          if(w.type==='both'){scales.y1={position:'right',grid:{drawOnChartArea:false},ticks:{color:'#888',font:{size:9}}};}
-          activeCharts[popup.id]=new Chart(canvas,{
-            type:'line',
-            data:{labels,datasets},
-            options:{responsive:true,maintainAspectRatio:false,animation:{duration:300},
-              plugins:{legend:{labels:{color:'#aaa',font:{size:10},boxWidth:12}},tooltip:{mode:'index',intersect:false}},
-              scales:{...scales,x:{display:true,grid:{display:false},ticks:{color:'#888',font:{size:8},maxTicksLimit:6,maxRotation:0}}}
-            }
-          });
-        },50);
-      });
-      c.on('popupclose',()=>{if(activeCharts[popup.id]){activeCharts[popup.id].destroy();delete activeCharts[popup.id];}});
-      wellMarkers.push(c);
-      clusterGroup.addLayer(c);
-    });
-  }
+  let count=0;
+  wells.forEach(w=>{
+    if(!ops.has(w.operator))return;
+    if(!types.has(w.type))return;
+    if(county&&w.county!==county)return;
+    
+    const color=WELL_COLORS[w.type]||'#888';
+    const c=L.circleMarker([w.lat,w.lng],{radius:5,color,fillColor:color,fillOpacity:0.7,weight:1,opacity:0.9});
+    
+    c.bindPopup(`
+      <strong style="color:${color}">${w.type.toUpperCase()} WELL</strong><br>
+      <span class="popup-label">API</span><div class="popup-value">${w.api}</div>
+      <span class="popup-label">Operator</span><div class="popup-value">${w.operator}</div>
+      <span class="popup-label">County</span><div class="popup-value">${w.county}</div>
+    `,{maxWidth:280});
+    
+    clusterGroup.addLayer(c);
+    count++;
+  });
 
-  if(showPermits){
-    permits.forEach(p=>{
-      if(!ops.has(p.operator))return;
-      if(p.type&&!types.has(p.type))return;
-      if(county&&p.county!==county)return;
-      const color=getOpColor(p.operator);
-      const m=L.marker([p.lat,p.lng],{icon:permitIcon(color)});
-      m.bindPopup(`<strong>Drilling Permit</strong><br>API: ${p.api}<br>Operator: ${p.operator}<br>County: ${p.county||'N/A'}<br>Type: ${(p.type||'N/A').toUpperCase()}<br>Date: ${p.permit_date}`);
-      permitMarkers.push(m);
-      clusterGroup.addLayer(m);
-    });
-  }
-
-  updateStats(ops,types,statuses,county,showWells,showPermits);
-}
-
-function updateStats(ops,types,statuses,county,showWells,showPermits){
-  const wc=showWells?wells.filter(w=>ops.has(w.operator)&&types.has(w.type)&&statuses.has(w.status)&&(!county||w.county===county)).length:0;
-  const pc=showPermits?permits.filter(p=>ops.has(p.operator)&&(!p.type||types.has(p.type))&&(!county||p.county===county)).length:0;
-  document.getElementById('stats').textContent=`${wc} wells, ${pc} permits | ${ops.size} operators`;
+  document.getElementById('stats').textContent=`${count.toLocaleString()} wells | ${ops.size} operators | Permian Basin`;
 }
 
 function toggleAllOps(){
@@ -351,9 +231,7 @@ function toggleSection(el){
 }
 
 function resetFilters(){
-  document.getElementById('layer-wells').checked=true;
-  document.getElementById('layer-permits').checked=true;
-  document.querySelectorAll('.wtype-cb,.status-cb,.op-cb').forEach(c=>c.checked=true);
+  document.querySelectorAll('.wtype-cb,.op-cb').forEach(c=>c.checked=true);
   document.getElementById('county-filter').value='';
   allOpsVisible=true;
   applyFilters();
