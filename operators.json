@@ -1,68 +1,57 @@
 [
   {
     "name": "Pioneer/ExxonMobil",
-    "color": "#e41a1c",
-    "well_count": 3583,
-    "permit_count": 84
-  },
-  {
-    "name": "Chevron",
-    "color": "#a65628",
-    "well_count": 2764,
-    "permit_count": 64
-  },
-  {
-    "name": "Occidental Petroleum",
-    "color": "#f781bf",
-    "well_count": 2406,
-    "permit_count": 49
-  },
-  {
-    "name": "ConocoPhillips",
-    "color": "#377eb8",
-    "well_count": 1605,
-    "permit_count": 45
-  },
-  {
-    "name": "EOG Resources",
-    "color": "#4daf4a",
-    "well_count": 1399,
-    "permit_count": 39
-  },
-  {
-    "name": "Diamondback Energy",
-    "color": "#ff7f00",
-    "well_count": 1602,
-    "permit_count": 46
-  },
-  {
-    "name": "Devon Energy",
-    "color": "#984ea3",
-    "well_count": 1257,
-    "permit_count": 37
-  },
-  {
-    "name": "Apache/APA",
-    "color": "#999999",
-    "well_count": 989,
-    "permit_count": 23
-  },
-  {
-    "name": "Coterra Energy",
-    "color": "#66c2a5",
-    "well_count": 583,
-    "permit_count": 16
-  },
-  {
-    "name": "Callon Petroleum",
-    "color": "#fc8d62",
-    "well_count": 408,
-    "permit_count": 7
+    "color": "#FF6B6B",
+    "count": 9554
   },
   {
     "name": "Other",
-    "color": "#cccccc",
-    "well_count": 3404,
-    "permit_count": 90
+    "color": "#888888",
+    "count": 5000
+  },
+  {
+    "name": "Occidental Petroleum",
+    "color": "#45B7D1",
+    "count": 3716
+  },
+  {
+    "name": "Coterra Energy",
+    "color": "#BB8FCE",
+    "count": 3488
+  },
+  {
+    "name": "Apache/APA",
+    "color": "#F7DC6F",
+    "count": 3336
+  },
+  {
+    "name": "Diamondback Energy",
+    "color": "#FFEAA7",
+    "count": 2821
+  },
+  {
+    "name": "Chevron",
+    "color": "#4ECDC4",
+    "count": 2307
+  },
+  {
+    "name": "EOG Resources",
+    "color": "#DDA0DD",
+    "count": 1024
+  },
+  {
+    "name": "Devon Energy",
+    "color": "#98D8C8",
+    "count": 802
+  },
+  {
+    "name": "ConocoPhillips",
+    "color": "#96CEB4",
+    "count": 733
+  },
+  {
+    "name": "Callon Petroleum",
+    "color": "#85C1E9",
+    "count": 582
   }
 ]
