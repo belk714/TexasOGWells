@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texas O&G Wells Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;overflow:hidden}
+#map{position:absolute;top:50px;left:0;right:0;bottom:0;z-index:1}
+#header{height:50px;background:#16213e;display:flex;align-items:center;padding:0 20px;border-bottom:1px solid #0f3460;z-index:1000;position:relative}
+#header h1{font-size:18px;color:#e94560;font-weight:700;white-space:nowrap}
+#stats{margin-left:30px;font-size:13px;color:#a0a0b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#panel{position:absolute;top:50px;right:0;width:280px;background:#16213e;z-index:1000;height:calc(100vh - 50px);overflow-y:auto;border-left:1px solid #0f3460;transition:transform .3s}
+#panel.hidden{transform:translateX(100%)}
+#panel h2{padding:15px;font-size:14px;color:#e94560;border-bottom:1px solid #0f3460;display:flex;justify-content:space-between;align-items:center}
+.op-row{display:flex;align-items:center;padding:8px 15px;cursor:pointer;transition:background .2s}
+.op-row:hover{background:#1a1a3e}
+.op-color{width:14px;height:14px;border-radius:50%;margin-right:10px;flex-shrink:0}
+.op-label{font-size:13px;flex:1}
+.op-count{font-size:11px;color:#888;margin-left:5px}
+.op-row input{margin-right:8px}
+#toggle-panel{position:absolute;top:60px;right:10px;z-index:1001;background:#16213e;border:1px solid #0f3460;color:#e0e0e0;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:12px}
+#panel.hidden~#toggle-panel{right:10px}
+.legend-section{padding:10px 15px;border-top:1px solid #0f3460}
+.legend-section h3{font-size:12px;color:#888;margin-bottom:8px}
+.legend-item{display:flex;align-items:center;font-size:12px;margin-bottom:4px}
+.legend-well{width:10px;height:10px;border-radius:50%;background:#e94560;margin-right:8px}
+.legend-permit{width:10px;height:10px;border-radius:50%;border:2px solid #e94560;margin-right:8px}
+.leaflet-popup-content-wrapper{background:#16213e!important;color:#e0e0e0!important;border-radius:8px!important;border:1px solid #0f3460}
+.leaflet-popup-tip{background:#16213e!important}
+.leaflet-popup-content{font-size:13px;line-height:1.6}
+.leaflet-popup-content strong{color:#e94560}
+.marker-cluster{background:rgba(233,69,96,.3)!important}
+.marker-cluster div{background:rgba(233,69,96,.7)!important;color:#fff!important;font-weight:700}
+/* Dark tiles */
+.leaflet-tile{filter:brightness(0.7) contrast(1.1) saturate(0.3)}
+.leaflet-control-zoom a{background:#16213e!important;color:#e0e0e0!important;border-color:#0f3460!important}
+.leaflet-control-attribution{background:rgba(22,33,62,.8)!important;color:#666!important}
+.leaflet-control-attribution a{color:#888!important}
+@media(max-width:768px){
+  #panel{width:100%;top:auto;bottom:0;height:50vh;border-left:none;border-top:1px solid #0f3460}
+  #panel.hidden{transform:translateY(100%)}
+  #stats{display:none}
+}
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>🛢️ Texas O&G Wells</h1>
+  <div id="stats">Loading...</div>
+</div>
+<div id="map"></div>
+<button id="toggle-panel" onclick="togglePanel()">☰ Operators</button>
+<div id="panel">
+  <h2>Operators <button onclick="toggleAll()" style="background:none;border:1px solid #0f3460;color:#e0e0e0;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:11px">Toggle All</button></h2>
+  <div id="op-list"></div>
+  <div class="legend-section">
+    <h3>Legend</h3>
+    <div class="legend-item"><div class="legend-well"></div> Active Well</div>
+    <div class="legend-item"><div class="legend-permit"></div> Undrilled Permit</div>
+    <div class="legend-item"><div class="legend-well" style="background:#666"></div> Inactive Well</div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+const map=L.map('map',{center:[31.5,-100],zoom:6,zoomControl:true});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
+
+let operators=[],wells=[],permits=[];
+let wellLayers={},permitLayers={};
+let clusterGroup=L.markerClusterGroup({maxClusterRadius:40,spiderfyOnMaxZoom:true,showCoverageOnHover:false,
+  iconCreateFunction:function(cluster){
+    const n=cluster.getChildCount();
+    const size=n>100?'large':n>30?'medium':'small';
+    return L.divIcon({html:'<div>'+n+'</div>',className:'marker-cluster marker-cluster-'+size,iconSize:[40,40]});
+  }
+});
+map.addLayer(clusterGroup);
+
+let allVisible=true;
+
+async function loadData(){
+  [operators,wells,permits]=await Promise.all([
+    fetch('operators.json').then(r=>r.json()),
+    fetch('wells.json').then(r=>r.json()),
+    fetch('permits.json').then(r=>r.json())
+  ]);
+  buildPanel();
+  plotAll();
+  updateStats();
+}
+
+function buildPanel(){
+  const list=document.getElementById('op-list');
+  list.innerHTML=operators.map((op,i)=>`
+    <label class="op-row">
+      <input type="checkbox" checked data-op="${op.name}" onchange="toggleOp('${op.name.replace(/'/g,"\\'")}',this.checked)">
+      <div class="op-color" style="background:${op.color}"></div>
+      <span class="op-label">${op.name}</span>
+      <span class="op-count">${op.well_count}w/${op.permit_count}p</span>
+    </label>
+  `).join('');
+}
+
+function makeCircle(lat,lng,color,radius,fillOpacity,data,isPermit){
+  const c=L.circleMarker([lat,lng],{
+    radius:radius,color:color,fillColor:isPermit?'transparent':color,
+    fillOpacity:fillOpacity,weight:isPermit?2:1,opacity:0.9
+  });
+  if(isPermit){
+    c.bindPopup(`<strong>Permit</strong><br>API: ${data.api}<br>Operator: ${data.operator}<br>Date: ${data.permit_date}`);
+  }else{
+    c.bindPopup(`<strong>${data.type.toUpperCase()} Well</strong><br>API: ${data.api}<br>Operator: ${data.operator}<br>County: ${data.county}<br>Status: ${data.status}<br><br><em style="color:#888">Production data coming soon</em>`);
+  }
+  return c;
+}
+
+function getOpColor(name){
+  const op=operators.find(o=>o.name===name);
+  return op?op.color:'#fff';
+}
+
+function plotAll(){
+  clusterGroup.clearLayers();
+  wellLayers={};permitLayers={};
+  operators.forEach(op=>{
+    wellLayers[op.name]=[];
+    permitLayers[op.name]=[];
+  });
+  wells.forEach(w=>{
+    const color=w.status==='inactive'?'#666':getOpColor(w.operator);
+    const c=makeCircle(w.lat,w.lng,color,5,0.7,w,false);
+    if(wellLayers[w.operator])wellLayers[w.operator].push(c);
+    clusterGroup.addLayer(c);
+  });
+  permits.forEach(p=>{
+    const c=makeCircle(p.lat,p.lng,getOpColor(p.operator),6,0,p,true);
+    if(permitLayers[p.operator])permitLayers[p.operator].push(c);
+    clusterGroup.addLayer(c);
+  });
+}
+
+function toggleOp(name,visible){
+  const layers=[...(wellLayers[name]||[]),...(permitLayers[name]||[])];
+  layers.forEach(l=>{if(visible)clusterGroup.addLayer(l);else clusterGroup.removeLayer(l)});
+  updateStats();
+}
+
+function toggleAll(){
+  allVisible=!allVisible;
+  document.querySelectorAll('#op-list input').forEach(cb=>{cb.checked=allVisible;toggleOp(cb.dataset.op,allVisible)});
+}
+
+function togglePanel(){document.getElementById('panel').classList.toggle('hidden')}
+
+function updateStats(){
+  const checked=new Set([...document.querySelectorAll('#op-list input:checked')].map(c=>c.dataset.op));
+  const shown=wells.filter(w=>checked.has(w.operator)).length;
+  const pShown=permits.filter(p=>checked.has(p.operator)).length;
+  document.getElementById('stats').textContent=`Showing ${shown} wells, ${pShown} permits across ${checked.size} operators`;
+}
+
+loadData();
+</script>
+</body>
+</html>
