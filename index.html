@@ -620,7 +620,8 @@ function openRRCViewer(api){
     t.textContent='✅ API '+api8+' copied — paste in GIS Viewer search bar';
     Object.assign(t.style,{position:'fixed',bottom:'20px',left:'50%',transform:'translateX(-50%)',background:'#1a1a3e',color:'#f5c542',padding:'10px 18px',borderRadius:'8px',fontSize:'13px',zIndex:'9999',border:'1px solid #f5c542',boxShadow:'0 4px 12px rgba(0,0,0,.5)',whiteSpace:'nowrap'});
     document.body.appendChild(t);
-    setTimeout(()=>t.remove(),4000);
+    t.onclick=()=>t.remove();
+    window.addEventListener('focus',()=>t.remove(),{once:true});
   }).catch(()=>{});
   window.open('https://gis.rrc.texas.gov/GISViewer/','_blank');
 }
