@@ -129,7 +129,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 <!-- Search Bar -->
 <div id="search-container">
   <span id="search-icon">🔍</span>
-  <input type="text" id="search-input" placeholder="Search by API number or operator name..." autocomplete="off">
+  <input type="text" id="search-input" placeholder="Search by well name, API number, or operator..." autocomplete="off">
   <div id="search-results"></div>
 </div>
 
@@ -298,6 +298,7 @@ function openDetail(w){
   
   document.getElementById('detail-content').innerHTML=`
     <div class="detail-section">
+      ${w.name?`<div class="detail-label">Well Name</div><div class="detail-value" style="font-weight:600;font-size:15px">${w.name}</div>`:''}
       <div class="detail-label">API Number</div>
       <div class="detail-value"><span class="detail-api-link" onclick="queryRRC('${w.api}',${w.lat},${w.lng})">${w.api}</span> <span style="font-size:11px;color:#666">(click for live RRC data)</span></div>
       <div class="detail-label">Operator</div>
@@ -317,7 +318,7 @@ function openDetail(w){
       <div class="action-links">
         <a class="action-link" href="https://gis.rrc.texas.gov/GISViewer/" target="_blank" rel="noopener"><span class="action-link-icon">🗺️</span> View on RRC GIS Viewer</a>
         <a class="action-link" href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" rel="noopener"><span class="action-link-icon">📊</span> Search RRC Production Data</a>
-        <a class="action-link" href="https://fracfocus.org/wells/${apiClean}" target="_blank" rel="noopener"><span class="action-link-icon">💧</span> View on FracFocus</a>
+        <a class="action-link" href="https://fracfocus.org/wells/${apiClean}0000" target="_blank" rel="noopener"><span class="action-link-icon">💧</span> View on FracFocus</a>
       </div>
     </div>
   `;
@@ -421,7 +422,7 @@ function doSearch(q){
   const results=[];
   for(let i=0;i<wells.length&&results.length<10;i++){
     const w=wells[i];
-    if(w.api.toLowerCase().includes(q)||w.operator.toLowerCase().includes(q)){
+    if(w.api.toLowerCase().includes(q)||w.operator.toLowerCase().includes(q)||(w.name&&w.name.toLowerCase().includes(q))){
       results.push(w);
     }
   }
@@ -431,8 +432,8 @@ function doSearch(q){
   }else{
     searchResults.innerHTML=results.map((w,i)=>`
       <div class="search-item" onclick="selectSearchResult('${w.api}')">
-        <div class="search-item-api">${WELL_EMOJI[w.type]||''} ${w.api}</div>
-        <div class="search-item-details">${w.operator} · ${w.county} Co. · ${w.basin} · ${w.type}</div>
+        <div class="search-item-api">${WELL_EMOJI[w.type]||''} ${w.name||w.api}</div>
+        <div class="search-item-details">${w.api} · ${w.operator} · ${w.county} Co. · ${w.basin}</div>
       </div>
     `).join('');
   }
