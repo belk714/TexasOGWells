@@ -15,6 +15,42 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 #header h1{font-size:18px;color:#e94560;font-weight:700;white-space:nowrap}
 #stats{margin-left:30px;font-size:13px;color:#a0a0b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+/* Search Bar */
+#search-container{position:absolute;top:60px;left:50%;transform:translateX(-50%);z-index:1002;width:380px;max-width:calc(100vw - 20px)}
+#search-input{width:100%;padding:10px 14px 10px 36px;background:#16213e;color:#e0e0e0;border:1px solid #0f3460;border-radius:8px;font-size:14px;outline:none;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+#search-input:focus{border-color:#e94560}
+#search-input::placeholder{color:#666}
+#search-icon{position:absolute;left:12px;top:12px;color:#666;font-size:14px;pointer-events:none}
+#search-results{position:absolute;top:100%;left:0;right:0;background:#16213e;border:1px solid #0f3460;border-top:none;border-radius:0 0 8px 8px;max-height:350px;overflow-y:auto;display:none;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.search-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid #0f34601a;transition:background .15s}
+.search-item:hover,.search-item.active{background:#1a1a3e}
+.search-item-api{font-size:13px;font-weight:600;color:#e94560}
+.search-item-details{font-size:11px;color:#888;margin-top:2px}
+
+/* Detail Panel */
+#detail-panel{position:absolute;top:50px;left:0;width:340px;background:#16213e;z-index:1001;height:calc(100vh - 50px);overflow-y:auto;border-right:1px solid #0f3460;transition:transform .3s ease;transform:translateX(-100%)}
+#detail-panel.open{transform:translateX(0)}
+#detail-close{position:absolute;top:10px;right:10px;background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:4px 8px;line-height:1}
+#detail-close:hover{color:#e0e0e0}
+#detail-panel h2{padding:14px 18px;font-size:15px;color:#e94560;border-bottom:1px solid #0f3460}
+.detail-section{padding:14px 18px;border-bottom:1px solid #0f3460}
+.detail-label{color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.detail-value{font-size:14px;margin-bottom:10px}
+.detail-api-link{color:#e94560;cursor:pointer;text-decoration:underline;font-weight:600}
+.detail-api-link:hover{color:#ff6b81}
+.rrc-spinner{display:inline-block;width:14px;height:14px;border:2px solid #0f3460;border-top-color:#e94560;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-left:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rrc-data{background:#1a1a2e;border-radius:6px;padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7}
+.rrc-data .detail-label{margin-top:6px}
+.action-links{display:flex;flex-direction:column;gap:8px}
+.action-link{display:flex;align-items:center;gap:8px;color:#4fc3f7;font-size:13px;text-decoration:none;padding:8px 12px;background:#1a1a2e;border-radius:6px;transition:background .15s}
+.action-link:hover{background:#1f2a4a}
+.action-link-icon{font-size:16px;flex-shrink:0}
+
+/* Well highlight */
+.highlight-marker{animation:pulse-ring 1.5s ease-out infinite}
+@keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(233,69,96,.6)}70%{box-shadow:0 0 0 14px rgba(233,69,96,0)}100%{box-shadow:0 0 0 0 rgba(233,69,96,0)}}
+
 #panel{position:absolute;top:50px;right:0;width:300px;background:#16213e;z-index:1000;height:calc(100vh - 50px);overflow-y:auto;border-left:1px solid #0f3460;transition:transform .3s ease}
 #panel.hidden{transform:translateX(100%)}
 #panel h2{padding:12px 15px;font-size:14px;color:#e94560;border-bottom:1px solid #0f3460;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#16213e;z-index:2}
@@ -67,6 +103,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
 @media(max-width:768px){
   #header h1{font-size:15px}
   #stats{display:none}
+  #search-container{width:calc(100vw - 20px);top:58px}
   #panel{width:100%;top:auto;bottom:0;height:55vh;border-left:none;border-top:1px solid #0f3460;border-radius:12px 12px 0 0}
   #panel.hidden{transform:translateY(100%)}
   #panel h2{border-radius:12px 12px 0 0}
@@ -75,6 +112,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
   .op-row{padding:8px 0}
   .filter-opt{padding:6px 0}
   .leaflet-popup-content-wrapper{max-width:280px!important}
+  /* Detail panel as bottom sheet on mobile */
+  #detail-panel{top:auto;bottom:0;left:0;right:0;width:100%;height:65vh;border-right:none;border-top:1px solid #0f3460;border-radius:12px 12px 0 0;transform:translateY(100%)}
+  #detail-panel.open{transform:translateY(0)}
+  #detail-panel h2{border-radius:12px 12px 0 0}
 }
 </style>
 </head>
@@ -84,6 +125,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#1a1a2e;color:#e0e0e
   <div id="stats">Loading...</div>
 </div>
 <div id="map"></div>
+
+<!-- Search Bar -->
+<div id="search-container">
+  <span id="search-icon">🔍</span>
+  <input type="text" id="search-input" placeholder="Search by API number or operator name..." autocomplete="off">
+  <div id="search-results"></div>
+</div>
+
+<!-- Well Detail Panel -->
+<div id="detail-panel">
+  <button id="detail-close" onclick="closeDetail()">✕</button>
+  <h2 id="detail-title">Well Details</h2>
+  <div id="detail-content"></div>
+</div>
+
 <button id="toggle-panel" onclick="togglePanel()">☰ Filters</button>
 <div id="panel">
   <h2>Filters <button class="sm-btn" onclick="resetFilters()">Reset</button></h2>
@@ -152,8 +208,13 @@ const map=L.map('map',{center:[31.5,-99.5],zoom:6,zoomControl:true});
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
 
 const WELL_COLORS={oil:'#4daf4a',gas:'#e94560',both:'#f5c542'};
+const WELL_EMOJI={oil:'🟢',gas:'🔴',both:'🟡'};
 
 let operators=[],wells=[];
+let wellMarkerMap={}; // api -> marker
+let highlightMarker=null;
+let rrcCache={};
+
 let clusterGroup=L.markerClusterGroup({maxClusterRadius:30,spiderfyOnMaxZoom:true,spiderfyDistanceMultiplier:1.5,showCoverageOnHover:false,zoomToBoundsOnClick:true,disableClusteringAtZoom:14,
   iconCreateFunction:c=>{
     const n=c.getChildCount();
@@ -184,7 +245,6 @@ function buildCountyFilter(){
 }
 
 function buildPanel(){
-  // Count wells per operator
   const opCounts={};
   wells.forEach(w=>{opCounts[w.operator]=(opCounts[w.operator]||0)+1;});
   
@@ -199,6 +259,7 @@ function buildPanel(){
 
 function applyFilters(){
   clusterGroup.clearLayers();
+  wellMarkerMap={};
 
   const types=new Set([...document.querySelectorAll('.wtype-cb:checked')].map(c=>c.value));
   const basins=new Set([...document.querySelectorAll('.basin-cb:checked')].map(c=>c.value));
@@ -215,20 +276,205 @@ function applyFilters(){
     const color=WELL_COLORS[w.type]||'#888';
     const c=L.circleMarker([w.lat,w.lng],{radius:7,color,fillColor:color,fillOpacity:0.7,weight:1,opacity:0.9});
     
-    c.bindPopup(`
-      <strong style="color:${color}">${w.type.toUpperCase()} WELL</strong><br>
-      <span class="popup-label">API</span><div class="popup-value">${w.api}</div>
-      <span class="popup-label">Operator</span><div class="popup-value">${w.operator}</div>
-      <span class="popup-label">County</span><div class="popup-value">${w.county}</div>
-      <span class="popup-label">Basin</span><div class="popup-value">${w.basin}</div>
-    `,{maxWidth:280});
+    c.wellData=w;
+    c.on('click',function(){openDetail(w);});
     
+    wellMarkerMap[w.api]=c;
     clusterGroup.addLayer(c);
     count++;
   });
 
   document.getElementById('stats').textContent=`${count.toLocaleString()} wells | ${ops.size} operators | Permian Basin`;
 }
+
+// ===== DETAIL PANEL =====
+function openDetail(w){
+  const color=WELL_COLORS[w.type]||'#888';
+  const emoji=WELL_EMOJI[w.type]||'';
+  const apiClean=w.api.replace(/-/g,'');
+  
+  document.getElementById('detail-title').innerHTML=`${emoji} ${w.type.toUpperCase()} WELL`;
+  document.getElementById('detail-title').style.color=color;
+  
+  document.getElementById('detail-content').innerHTML=`
+    <div class="detail-section">
+      <div class="detail-label">API Number</div>
+      <div class="detail-value"><span class="detail-api-link" onclick="queryRRC('${w.api}',${w.lat},${w.lng})">${w.api}</span> <span style="font-size:11px;color:#666">(click for live RRC data)</span></div>
+      <div class="detail-label">Operator</div>
+      <div class="detail-value">${w.operator}</div>
+      <div class="detail-label">County</div>
+      <div class="detail-value">${w.county}</div>
+      <div class="detail-label">Basin</div>
+      <div class="detail-value">${w.basin}</div>
+      <div class="detail-label">Well Type</div>
+      <div class="detail-value" style="color:${color};font-weight:600">${w.type==='both'?'Oil & Gas':w.type.charAt(0).toUpperCase()+w.type.slice(1)}</div>
+      <div class="detail-label">Coordinates</div>
+      <div class="detail-value" style="font-size:12px;color:#888">${w.lat.toFixed(6)}, ${w.lng.toFixed(6)}</div>
+      <div id="rrc-data-container"></div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label" style="margin-bottom:8px">Actions</div>
+      <div class="action-links">
+        <a class="action-link" href="https://gis.rrc.texas.gov/GISViewer/" target="_blank" rel="noopener"><span class="action-link-icon">🗺️</span> View on RRC GIS Viewer</a>
+        <a class="action-link" href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" rel="noopener"><span class="action-link-icon">📊</span> Search RRC Production Data</a>
+        <a class="action-link" href="https://fracfocus.org/wells/${apiClean}" target="_blank" rel="noopener"><span class="action-link-icon">💧</span> View on FracFocus</a>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('detail-panel').classList.add('open');
+  
+  // If we have cached RRC data, show it
+  if(rrcCache[w.api]){
+    showRRCData(rrcCache[w.api]);
+  }
+}
+
+function closeDetail(){
+  document.getElementById('detail-panel').classList.remove('open');
+  clearHighlight();
+}
+
+async function queryRRC(api,lat,lng){
+  const container=document.getElementById('rrc-data-container');
+  if(rrcCache[api]){
+    showRRCData(rrcCache[api]);
+    return;
+  }
+  container.innerHTML='<div style="margin-top:10px;color:#888;font-size:12px">Querying RRC... <span class="rrc-spinner"></span></div>';
+  
+  try{
+    const url=`https://gis.rrc.texas.gov/server/rest/services/rrc_public/RRC_Public_Viewer_Srvs/MapServer/1/query?geometry=${lng},${lat}&geometryType=esriGeometryPoint&inSR=4326&distance=200&units=esriSRUnit_Meter&outFields=*&f=json&spatialRel=esriSpatialRelIntersects`;
+    const resp=await fetch(url);
+    const data=await resp.json();
+    
+    // Try to match by API: our format 42-XXX-XXXXX, RRC uses countyFIPS+wellSerial (8 digits)
+    const parts=api.split('-'); // 42, XXX, XXXXX
+    const rrcApiKey=parts[1]+parts[2]; // XXX+XXXXX = 8 digits
+    
+    let match=null;
+    if(data.features&&data.features.length>0){
+      // Try matching by API
+      match=data.features.find(f=>{
+        const attrs=f.attributes;
+        const fipsSerial=String(attrs.CNTY_FIPS||'').padStart(3,'0')+String(attrs.WELL_SERIAL||'').padStart(5,'0');
+        return fipsSerial===rrcApiKey;
+      });
+      if(!match) match=data.features[0]; // fallback to nearest
+    }
+    
+    if(match){
+      rrcCache[api]=match.attributes;
+      showRRCData(match.attributes);
+    } else {
+      container.innerHTML='<div style="margin-top:10px;color:#888;font-size:12px">No RRC data found within 200m.</div>';
+    }
+  }catch(e){
+    container.innerHTML='<div style="margin-top:10px;color:#e94560;font-size:12px">Error querying RRC: '+e.message+'</div>';
+  }
+}
+
+function showRRCData(attrs){
+  const container=document.getElementById('rrc-data-container');
+  if(!container)return;
+  container.innerHTML=`
+    <div class="rrc-data">
+      <div style="color:#e94560;font-weight:600;font-size:12px;margin-bottom:6px">📡 Live RRC Data</div>
+      <div class="detail-label">Well Number</div>
+      <div class="detail-value" style="font-size:13px">${attrs.WELL_NO||attrs.WellNumber||'N/A'}</div>
+      <div class="detail-label">Symbol Description</div>
+      <div class="detail-value" style="font-size:13px">${attrs.SYM_DESC||attrs.SymbolDescription||'N/A'}</div>
+      <div class="detail-label">Location Source</div>
+      <div class="detail-value" style="font-size:13px">${attrs.LOC_SOURCE||attrs.LocationSource||'N/A'}</div>
+    </div>
+  `;
+}
+
+// ===== SEARCH =====
+const searchInput=document.getElementById('search-input');
+const searchResults=document.getElementById('search-results');
+let searchTimeout=null;
+let activeSearchIdx=-1;
+
+searchInput.addEventListener('input',function(){
+  clearTimeout(searchTimeout);
+  const q=this.value.trim().toLowerCase();
+  if(q.length<2){searchResults.style.display='none';activeSearchIdx=-1;return;}
+  searchTimeout=setTimeout(()=>doSearch(q),200);
+});
+
+searchInput.addEventListener('keydown',function(e){
+  const items=searchResults.querySelectorAll('.search-item');
+  if(!items.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();activeSearchIdx=Math.min(activeSearchIdx+1,items.length-1);updateActiveSearch(items);}
+  else if(e.key==='ArrowUp'){e.preventDefault();activeSearchIdx=Math.max(activeSearchIdx-1,0);updateActiveSearch(items);}
+  else if(e.key==='Enter'&&activeSearchIdx>=0){e.preventDefault();items[activeSearchIdx].click();}
+  else if(e.key==='Escape'){searchResults.style.display='none';activeSearchIdx=-1;}
+});
+
+function updateActiveSearch(items){
+  items.forEach((it,i)=>it.classList.toggle('active',i===activeSearchIdx));
+  if(items[activeSearchIdx])items[activeSearchIdx].scrollIntoView({block:'nearest'});
+}
+
+function doSearch(q){
+  const results=[];
+  for(let i=0;i<wells.length&&results.length<10;i++){
+    const w=wells[i];
+    if(w.api.toLowerCase().includes(q)||w.operator.toLowerCase().includes(q)){
+      results.push(w);
+    }
+  }
+  activeSearchIdx=-1;
+  if(!results.length){
+    searchResults.innerHTML='<div style="padding:12px 14px;color:#666;font-size:13px">No results found</div>';
+  }else{
+    searchResults.innerHTML=results.map((w,i)=>`
+      <div class="search-item" onclick="selectSearchResult('${w.api}')">
+        <div class="search-item-api">${WELL_EMOJI[w.type]||''} ${w.api}</div>
+        <div class="search-item-details">${w.operator} · ${w.county} Co. · ${w.basin} · ${w.type}</div>
+      </div>
+    `).join('');
+  }
+  searchResults.style.display='block';
+}
+
+function selectSearchResult(api){
+  searchResults.style.display='none';
+  searchInput.value='';
+  const w=wells.find(x=>x.api===api);
+  if(!w)return;
+  
+  // Fly to well
+  map.flyTo([w.lat,w.lng],15,{duration:1.2});
+  
+  // Highlight
+  clearHighlight();
+  highlightMarker=L.circleMarker([w.lat,w.lng],{radius:14,color:'#e94560',fillColor:'#e94560',fillOpacity:0.3,weight:3,opacity:1,className:'highlight-marker'}).addTo(map);
+  
+  // Open detail
+  openDetail(w);
+  
+  // Open popup on the actual marker after fly completes
+  setTimeout(()=>{
+    const m=wellMarkerMap[api];
+    if(m){
+      // Ensure visible by unclustering
+      clusterGroup.zoomToShowLayer(m,()=>{m.openPopup();});
+    }
+  },1400);
+}
+
+function clearHighlight(){
+  if(highlightMarker){map.removeLayer(highlightMarker);highlightMarker=null;}
+}
+
+// Close search results on outside click
+document.addEventListener('click',function(e){
+  if(!document.getElementById('search-container').contains(e.target)){
+    searchResults.style.display='none';
+  }
+});
 
 function toggleAllOps(){
   allOpsVisible=!allOpsVisible;
