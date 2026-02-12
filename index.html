@@ -316,7 +316,7 @@ function openDetail(w){
     <div class="detail-section">
       <div class="detail-label" style="margin-bottom:8px">Actions</div>
       <div class="action-links">
-        <a class="action-link" href="https://gis.rrc.texas.gov/GISViewer/" target="_blank" rel="noopener"><span class="action-link-icon">🗺️</span> RRC GIS Viewer</a>
+        <a class="action-link" href="https://www.google.com/search?q=site:rrc.texas.gov+%22${w.api}%22" target="_blank" rel="noopener"><span class="action-link-icon">🗺️</span> Search RRC for Well</a>
         <a class="action-link" href="#" onclick="searchPDQ('${w.name||''}','${w.county}','${w.type}');return false"><span class="action-link-icon">📊</span> Search Production Data</a>
         <a class="action-link" href="https://fracfocusdata.org/DisclosureSearch/SearchResults?apiNumber=${w.api}" target="_blank" rel="noopener"><span class="action-link-icon">💧</span> FracFocus Disclosures</a>
         <a class="action-link" href="https://www.google.com/search?q=${encodeURIComponent(w.api+' texas well')}" target="_blank" rel="noopener"><span class="action-link-icon">🔎</span> Search Web for Well</a>
