@@ -317,7 +317,7 @@ function openDetail(w){
       <div class="detail-label" style="margin-bottom:8px">Actions</div>
       <div class="action-links">
         <a class="action-link" href="https://gis.rrc.texas.gov/GISViewer/" target="_blank" rel="noopener"><span class="action-link-icon">🗺️</span> RRC GIS Viewer</a>
-        <a class="action-link" href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" rel="noopener"><span class="action-link-icon">📊</span> RRC Production Data (PDQ)</a>
+        <a class="action-link" href="#" onclick="searchPDQ('${w.name||''}','${w.county}','${w.type}');return false"><span class="action-link-icon">📊</span> Search Production Data</a>
         <a class="action-link" href="https://fracfocusdata.org/DisclosureSearch/SearchResults?apiNumber=${w.api}" target="_blank" rel="noopener"><span class="action-link-icon">💧</span> FracFocus Disclosures</a>
         <a class="action-link" href="https://www.google.com/search?q=${encodeURIComponent(w.api+' texas well')}" target="_blank" rel="noopener"><span class="action-link-icon">🔎</span> Search Web for Well</a>
       </div>
@@ -500,6 +500,57 @@ function resetFilters(){
   document.getElementById('county-filter').value='';
   allOpsVisible=true;
   applyFilters();
+}
+
+// ===== PDQ PRODUCTION DATA SEARCH =====
+const PDQ_API='https://og-wells-pdq.belk714.workers.dev';
+
+async function searchPDQ(wellName, county, wellType){
+  const container=document.getElementById('rrc-data-container');
+  if(!container)return;
+  
+  // Use well name as search term, clean it up
+  let searchName=wellName.replace(/\s*#\d+\w*$/,'').replace(/\s+\d+[A-Z]*$/,'').trim();
+  if(!searchName||searchName.length<2){
+    searchName=wellName.split(/\s+/).slice(0,2).join(' ');
+  }
+  if(!searchName||searchName.length<2){
+    window.open('https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess','_blank');
+    return;
+  }
+  
+  container.innerHTML+=`<div id="pdq-results" style="margin-top:12px"><div style="color:#f5c542;font-weight:600;font-size:12px;margin-bottom:6px">📊 Searching RRC Production Data...</div><div style="color:#888;font-size:12px">Searching for "${searchName}"... <span class="rrc-spinner"></span></div></div>`;
+  
+  try{
+    const resp=await fetch(`${PDQ_API}/search?name=${encodeURIComponent(searchName)}`);
+    const data=await resp.json();
+    
+    if(data.error){
+      document.getElementById('pdq-results').innerHTML=`<div style="color:#e94560;font-size:12px">Error: ${data.error}. <a href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" style="color:#457b9d">Try manual search →</a></div>`;
+      return;
+    }
+    
+    if(!data.leases||data.leases.length===0){
+      document.getElementById('pdq-results').innerHTML=`<div style="color:#888;font-size:12px">No matching leases found for "${searchName}". <a href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" style="color:#457b9d">Try manual search →</a></div>`;
+      return;
+    }
+    
+    let html=`<div style="color:#f5c542;font-weight:600;font-size:12px;margin-bottom:6px">📊 RRC Lease Matches (${data.count})</div>`;
+    html+=`<div style="max-height:200px;overflow-y:auto">`;
+    data.leases.slice(0,15).forEach(l=>{
+      const typeEmoji=l.wellType==='Oil'?'🟢':'🔴';
+      html+=`<div style="padding:6px 8px;border:1px solid #1a1a3e;border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:12px;background:#0d1117" onclick="window.open('https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess','_blank')">
+        <div style="font-weight:600;color:#e0e0e0">${typeEmoji} ${l.displayName}</div>
+        <div style="color:#888;font-size:11px">District ${l.district} · Lease #${l.leaseNumber} · ${l.wellType}${l.wellNumber?' · Well '+l.wellNumber:''}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+    html+=`<div style="font-size:11px;color:#666;margin-top:4px">Click a lease → opens RRC PDQ to view production data</div>`;
+    
+    document.getElementById('pdq-results').innerHTML=html;
+  }catch(e){
+    document.getElementById('pdq-results').innerHTML=`<div style="color:#e94560;font-size:12px">Could not reach PDQ proxy. <a href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" style="color:#457b9d">Try manual search →</a></div>`;
+  }
 }
 
 loadData();
