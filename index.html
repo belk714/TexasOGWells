@@ -633,18 +633,25 @@ function drawProdChart(id, data, isOil){
   if(!canvas)return;
   const dpr=window.devicePixelRatio||1;
   const rect=canvas.getBoundingClientRect();
-  canvas.width=rect.width*dpr;canvas.height=180*dpr;
+  const H=200;
+  canvas.width=rect.width*dpr;canvas.height=H*dpr;
+  canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
-  const W=rect.width,H=180;
-  const pad={top:10,right:10,bottom:30,left:50};
+  const W=rect.width;
+  const pad={top:10,right:10,bottom:50,left:50};
   const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom;
   
   const vals=data.map(d=>isOil?d.oilBBL:d.gasMCF);
   const maxVal=Math.max(...vals,1);
   const labels=data.map(d=>d.month);
-  const barW=Math.max(2,cW/vals.length-2);
+  const unit=isOil?'BBL':'MCF';
+  const slotW=cW/vals.length;
+  const barW=Math.max(2,slotW-2);
   const color=isOil?'#4daf4a':'#e94560';
+  
+  // Store bar rects for hover
+  const bars=[];
   
   // Y-axis gridlines
   ctx.strokeStyle='#1a1a3e';ctx.lineWidth=1;ctx.font='9px sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
@@ -657,7 +664,7 @@ function drawProdChart(id, data, isOil){
   
   // Bars
   vals.forEach((v,i)=>{
-    const x=pad.left+(cW/vals.length)*i+(cW/vals.length-barW)/2;
+    const x=pad.left+slotW*i+(slotW-barW)/2;
     const h=(v/maxVal)*cH;
     const y=pad.top+cH-h;
     ctx.fillStyle=color;
@@ -665,17 +672,56 @@ function drawProdChart(id, data, isOil){
     const r=Math.min(2,barW/2);
     ctx.moveTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.arcTo(x+barW,y,x+barW,y+r,r);
     ctx.lineTo(x+barW,pad.top+cH);ctx.lineTo(x,pad.top+cH);ctx.fill();
+    bars.push({x,y,w:barW,h,val:v,label:labels[i]});
   });
   
-  // X-axis labels (show ~6 labels max)
-  ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
-  const step=Math.max(1,Math.floor(vals.length/6));
+  // X-axis labels — rotated 45°, show ~8 max
+  ctx.fillStyle='#999';ctx.font='10px sans-serif';ctx.textAlign='right';
+  const step=Math.max(1,Math.floor(vals.length/8));
   labels.forEach((l,i)=>{
     if(i%step===0||i===vals.length-1){
-      const x=pad.left+(cW/vals.length)*i+cW/vals.length/2;
-      ctx.fillText(l,x,H-pad.bottom+14);
+      const x=pad.left+slotW*i+slotW/2;
+      const y=pad.top+cH+6;
+      ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/4);
+      ctx.fillText(l,0,0);ctx.restore();
     }
   });
+  
+  // Tooltip element
+  let tooltip=document.getElementById('chart-tip-'+id);
+  if(!tooltip){
+    tooltip=document.createElement('div');tooltip.id='chart-tip-'+id;
+    Object.assign(tooltip.style,{position:'absolute',display:'none',background:'#1a1a3e',border:'1px solid '+color,borderRadius:'4px',padding:'4px 8px',fontSize:'11px',color:'#e0e0e0',pointerEvents:'none',zIndex:'10',whiteSpace:'nowrap',boxShadow:'0 2px 6px rgba(0,0,0,.5)'});
+    canvas.parentElement.style.position='relative';
+    canvas.parentElement.appendChild(tooltip);
+  }
+  
+  // Hover handler
+  canvas.onmousemove=function(e){
+    const cr=canvas.getBoundingClientRect();
+    const mx=e.clientX-cr.left,my=e.clientY-cr.top;
+    let hit=null;
+    for(const b of bars){if(mx>=b.x&&mx<=b.x+b.w&&my>=b.y&&my<=pad.top+cH)hit=b;}
+    // Also match by slot (easier to hover)
+    if(!hit){for(let i=0;i<bars.length;i++){
+      const sx=pad.left+slotW*i;
+      if(mx>=sx&&mx<sx+slotW&&my>=pad.top&&my<=pad.top+cH){hit=bars[i];break;}
+    }}
+    if(hit){
+      tooltip.innerHTML=`<strong>${hit.label}</strong><br>${hit.val.toLocaleString()} ${unit}`;
+      tooltip.style.display='block';
+      tooltip.style.left=(hit.x+hit.w/2-tooltip.offsetWidth/2)+'px';
+      tooltip.style.top=(hit.y-tooltip.offsetHeight-6)+'px';
+    }else{tooltip.style.display='none';}
+  };
+  canvas.onmouseleave=function(){tooltip.style.display='none';};
+  
+  // Touch support
+  canvas.ontouchmove=function(e){
+    e.preventDefault();const t=e.touches[0];
+    canvas.onmousemove({clientX:t.clientX,clientY:t.clientY});
+  };
+  canvas.ontouchend=function(){tooltip.style.display='none';};
 }
 
 loadData();
