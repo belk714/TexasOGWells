@@ -316,7 +316,7 @@ function openDetail(w){
     <div class="detail-section">
       <div class="detail-label" style="margin-bottom:8px">Actions</div>
       <div class="action-links">
-        <a class="action-link" href="https://www.google.com/search?q=site:rrc.texas.gov+%22${w.api}%22" target="_blank" rel="noopener"><span class="action-link-icon">🗺️</span> Search RRC for Well</a>
+        <a class="action-link" href="#" onclick="openRRCViewer('${w.api}');return false"><span class="action-link-icon">🗺️</span> RRC GIS Viewer</a>
         <a class="action-link" href="#" onclick="searchPDQ('${w.name||''}','${w.county}','${w.type}');return false"><span class="action-link-icon">📊</span> Search Production Data</a>
         <a class="action-link" href="https://fracfocusdata.org/DisclosureSearch/SearchResults?apiNumber=${w.api}" target="_blank" rel="noopener"><span class="action-link-icon">💧</span> FracFocus Disclosures</a>
         <a class="action-link" href="https://www.google.com/search?q=${encodeURIComponent(w.api+' texas well')}" target="_blank" rel="noopener"><span class="action-link-icon">🔎</span> Search Web for Well</a>
@@ -609,6 +609,20 @@ async function loadProduction(lease, district, type, name){
   }catch(e){
     container.innerHTML=`<div style="color:#e94560;font-size:12px">Error loading production: ${e.message}</div>`;
   }
+}
+
+function openRRCViewer(api){
+  // Convert 42-XXX-XXXXX to 8-digit format (strip state code 42- and dashes)
+  const api8=api.replace(/^42-/,'').replace(/-/g,'');
+  navigator.clipboard.writeText(api8).then(()=>{
+    // Show toast
+    const t=document.createElement('div');
+    t.textContent='✅ API '+api8+' copied — paste in GIS Viewer search bar';
+    Object.assign(t.style,{position:'fixed',bottom:'20px',left:'50%',transform:'translateX(-50%)',background:'#1a1a3e',color:'#f5c542',padding:'10px 18px',borderRadius:'8px',fontSize:'13px',zIndex:'9999',border:'1px solid #f5c542',boxShadow:'0 4px 12px rgba(0,0,0,.5)',whiteSpace:'nowrap'});
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),4000);
+  }).catch(()=>{});
+  window.open('https://gis.rrc.texas.gov/GISViewer/','_blank');
 }
 
 function showProdView(view, id){
