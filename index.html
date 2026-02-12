@@ -579,22 +579,103 @@ async function loadProduction(lease, district, type, name){
     html+=`<div style="background:#0d1117;padding:8px;border-radius:6px;border:1px solid #1a1a3e"><div style="font-size:10px;color:#888">Operator</div><div style="font-size:11px;color:#e0e0e0">${operator}</div></div>`;
     html+=`</div>`;
     
-    // Production table (last 24 months)
-    const recent=data.data.slice(-24).reverse();
-    html+=`<div style="font-size:11px;color:#888;margin-bottom:4px">Recent Production (last ${Math.min(24,data.data.length)} months)</div>`;
-    html+=`<div style="max-height:200px;overflow-y:auto;border:1px solid #1a1a3e;border-radius:6px">`;
-    html+=`<table style="width:100%;border-collapse:collapse;font-size:11px">`;
-    html+=`<tr style="position:sticky;top:0;background:#0d1117"><th style="padding:4px 6px;text-align:left;color:#888;border-bottom:1px solid #1a1a3e">Month</th><th style="padding:4px 6px;text-align:right;color:#888;border-bottom:1px solid #1a1a3e">${label}</th><th style="padding:4px 6px;text-align:right;color:#888;border-bottom:1px solid #1a1a3e">Wells</th></tr>`;
-    recent.forEach(d=>{
+    // Chart + Table toggle
+    const recent=data.data.slice(-24);
+    const chartId='prod-chart-'+Date.now();
+    html+=`<div style="display:flex;gap:6px;margin-bottom:8px">`;
+    html+=`<button id="btn-chart-${chartId}" onclick="showProdView('chart','${chartId}')" style="padding:4px 10px;font-size:11px;border-radius:4px;border:1px solid #f5c542;background:#f5c542;color:#0d1117;cursor:pointer;font-weight:600">📈 Chart</button>`;
+    html+=`<button id="btn-table-${chartId}" onclick="showProdView('table','${chartId}')" style="padding:4px 10px;font-size:11px;border-radius:4px;border:1px solid #333;background:transparent;color:#888;cursor:pointer">📋 View Table</button>`;
+    html+=`</div>`;
+    
+    // Chart container
+    html+=`<div id="chart-${chartId}" style="border:1px solid #1a1a3e;border-radius:6px;padding:8px;background:#0d1117"><canvas id="canvas-${chartId}" style="width:100%;height:180px"></canvas></div>`;
+    
+    // Table container (hidden initially)
+    const recentRev=recent.slice().reverse();
+    let tableHtml=`<div style="max-height:200px;overflow-y:auto;border:1px solid #1a1a3e;border-radius:6px">`;
+    tableHtml+=`<table style="width:100%;border-collapse:collapse;font-size:11px">`;
+    tableHtml+=`<tr style="position:sticky;top:0;background:#0d1117"><th style="padding:4px 6px;text-align:left;color:#888;border-bottom:1px solid #1a1a3e">Month</th><th style="padding:4px 6px;text-align:right;color:#888;border-bottom:1px solid #1a1a3e">${label}</th><th style="padding:4px 6px;text-align:right;color:#888;border-bottom:1px solid #1a1a3e">Wells</th></tr>`;
+    recentRev.forEach(d=>{
       const vol=isOil?d.oilBBL:d.gasMCF;
-      html+=`<tr><td style="padding:3px 6px;color:#e0e0e0;border-bottom:1px solid #0a0a15">${d.month}</td><td style="padding:3px 6px;text-align:right;color:${isOil?'#4daf4a':'#e94560'};font-weight:600;border-bottom:1px solid #0a0a15">${vol.toLocaleString()}</td><td style="padding:3px 6px;text-align:right;color:#888;border-bottom:1px solid #0a0a15">${d.wellCount}</td></tr>`;
+      tableHtml+=`<tr><td style="padding:3px 6px;color:#e0e0e0;border-bottom:1px solid #0a0a15">${d.month}</td><td style="padding:3px 6px;text-align:right;color:${isOil?'#4daf4a':'#e94560'};font-weight:600;border-bottom:1px solid #0a0a15">${vol.toLocaleString()}</td><td style="padding:3px 6px;text-align:right;color:#888;border-bottom:1px solid #0a0a15">${d.wellCount}</td></tr>`;
     });
-    html+=`</table></div>`;
+    tableHtml+=`</table></div>`;
+    html+=`<div id="table-${chartId}" style="display:none">${tableHtml}</div>`;
     
     container.innerHTML=html;
+    
+    // Draw chart
+    drawProdChart(chartId, recent, isOil);
   }catch(e){
     container.innerHTML=`<div style="color:#e94560;font-size:12px">Error loading production: ${e.message}</div>`;
   }
+}
+
+function showProdView(view, id){
+  const chart=document.getElementById('chart-'+id);
+  const table=document.getElementById('table-'+id);
+  const btnChart=document.getElementById('btn-chart-'+id);
+  const btnTable=document.getElementById('btn-table-'+id);
+  if(!chart||!table)return;
+  if(view==='chart'){
+    chart.style.display='';table.style.display='none';
+    btnChart.style.background='#f5c542';btnChart.style.color='#0d1117';btnChart.style.borderColor='#f5c542';
+    btnTable.style.background='transparent';btnTable.style.color='#888';btnTable.style.borderColor='#333';
+  }else{
+    chart.style.display='none';table.style.display='';
+    btnTable.style.background='#f5c542';btnTable.style.color='#0d1117';btnTable.style.borderColor='#f5c542';
+    btnChart.style.background='transparent';btnChart.style.color='#888';btnChart.style.borderColor='#333';
+  }
+}
+
+function drawProdChart(id, data, isOil){
+  const canvas=document.getElementById('canvas-'+id);
+  if(!canvas)return;
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=180*dpr;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=180;
+  const pad={top:10,right:10,bottom:30,left:50};
+  const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom;
+  
+  const vals=data.map(d=>isOil?d.oilBBL:d.gasMCF);
+  const maxVal=Math.max(...vals,1);
+  const labels=data.map(d=>d.month);
+  const barW=Math.max(2,cW/vals.length-2);
+  const color=isOil?'#4daf4a':'#e94560';
+  
+  // Y-axis gridlines
+  ctx.strokeStyle='#1a1a3e';ctx.lineWidth=1;ctx.font='9px sans-serif';ctx.fillStyle='#666';ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const y=pad.top+cH-(cH*i/4);
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
+    const v=Math.round(maxVal*i/4);
+    ctx.fillText(v>=1000?(v/1000).toFixed(v>=10000?0:1)+'k':v,pad.left-4,y+3);
+  }
+  
+  // Bars
+  vals.forEach((v,i)=>{
+    const x=pad.left+(cW/vals.length)*i+(cW/vals.length-barW)/2;
+    const h=(v/maxVal)*cH;
+    const y=pad.top+cH-h;
+    ctx.fillStyle=color;
+    ctx.beginPath();
+    const r=Math.min(2,barW/2);
+    ctx.moveTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.arcTo(x+barW,y,x+barW,y+r,r);
+    ctx.lineTo(x+barW,pad.top+cH);ctx.lineTo(x,pad.top+cH);ctx.fill();
+  });
+  
+  // X-axis labels (show ~6 labels max)
+  ctx.fillStyle='#666';ctx.font='9px sans-serif';ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(vals.length/6));
+  labels.forEach((l,i)=>{
+    if(i%step===0||i===vals.length-1){
+      const x=pad.left+(cW/vals.length)*i+cW/vals.length/2;
+      ctx.fillText(l,x,H-pad.bottom+14);
+    }
+  });
 }
 
 loadData();
