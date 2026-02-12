@@ -509,11 +509,8 @@ async function searchPDQ(wellName, county, wellType){
   const container=document.getElementById('rrc-data-container');
   if(!container)return;
   
-  // Use well name as search term, clean it up
   let searchName=wellName.replace(/\s*#\d+\w*$/,'').replace(/\s+\d+[A-Z]*$/,'').trim();
-  if(!searchName||searchName.length<2){
-    searchName=wellName.split(/\s+/).slice(0,2).join(' ');
-  }
+  if(!searchName||searchName.length<2) searchName=wellName.split(/\s+/).slice(0,2).join(' ');
   if(!searchName||searchName.length<2){
     window.open('https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess','_blank');
     return;
@@ -525,12 +522,7 @@ async function searchPDQ(wellName, county, wellType){
     const resp=await fetch(`${PDQ_API}/search?name=${encodeURIComponent(searchName)}`);
     const data=await resp.json();
     
-    if(data.error){
-      document.getElementById('pdq-results').innerHTML=`<div style="color:#e94560;font-size:12px">Error: ${data.error}. <a href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" style="color:#457b9d">Try manual search →</a></div>`;
-      return;
-    }
-    
-    if(!data.leases||data.leases.length===0){
+    if(data.error||!data.leases||data.leases.length===0){
       document.getElementById('pdq-results').innerHTML=`<div style="color:#888;font-size:12px">No matching leases found for "${searchName}". <a href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" style="color:#457b9d">Try manual search →</a></div>`;
       return;
     }
@@ -539,17 +531,69 @@ async function searchPDQ(wellName, county, wellType){
     html+=`<div style="max-height:200px;overflow-y:auto">`;
     data.leases.slice(0,15).forEach(l=>{
       const typeEmoji=l.wellType==='Oil'?'🟢':'🔴';
-      html+=`<div style="padding:6px 8px;border:1px solid #1a1a3e;border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:12px;background:#0d1117" onclick="window.open('https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess','_blank')">
+      html+=`<div style="padding:6px 8px;border:1px solid #1a1a3e;border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:12px;background:#0d1117;transition:border-color .2s" onmouseover="this.style.borderColor='#f5c542'" onmouseout="this.style.borderColor='#1a1a3e'" onclick="loadProduction('${l.leaseNumber}','${l.district}','${l.wellType}','${l.displayName.replace(/'/g,"\\'")}')">
         <div style="font-weight:600;color:#e0e0e0">${typeEmoji} ${l.displayName}</div>
         <div style="color:#888;font-size:11px">District ${l.district} · Lease #${l.leaseNumber} · ${l.wellType}${l.wellNumber?' · Well '+l.wellNumber:''}</div>
+        <div style="color:#457b9d;font-size:10px;margin-top:2px">Click to load production data →</div>
       </div>`;
     });
     html+=`</div>`;
-    html+=`<div style="font-size:11px;color:#666;margin-top:4px">Click a lease → opens RRC PDQ to view production data</div>`;
     
     document.getElementById('pdq-results').innerHTML=html;
   }catch(e){
     document.getElementById('pdq-results').innerHTML=`<div style="color:#e94560;font-size:12px">Could not reach PDQ proxy. <a href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" style="color:#457b9d">Try manual search →</a></div>`;
+  }
+}
+
+async function loadProduction(lease, district, type, name){
+  const container=document.getElementById('pdq-results');
+  if(!container)return;
+  
+  container.innerHTML=`<div style="color:#f5c542;font-weight:600;font-size:12px;margin-bottom:6px">📊 ${name}</div><div style="color:#888;font-size:12px">Loading production data... <span class="rrc-spinner"></span></div>`;
+  
+  try{
+    const resp=await fetch(`${PDQ_API}/production?lease=${lease}&district=${district}&type=${type}`);
+    const data=await resp.json();
+    
+    if(data.error||!data.data||data.data.length===0){
+      container.innerHTML=`<div style="color:#f5c542;font-weight:600;font-size:12px;margin-bottom:6px">📊 ${name}</div><div style="color:#888;font-size:12px">No production data found for this lease. <a href="https://webapps.rrc.texas.gov/PDQ/generalReportAction.do?methodToCall=grantAccess" target="_blank" style="color:#457b9d">Try manual search →</a></div>`;
+      return;
+    }
+    
+    const isOil=type==='Oil';
+    const unit=isOil?'BBL':'MCF';
+    const label=isOil?'Oil (BBL)':'Gas (MCF)';
+    
+    // Summary stats
+    const totalProd=data.data.reduce((s,d)=>s+(isOil?d.oilBBL:d.gasMCF)||0,0);
+    const lastEntry=data.data[data.data.length-1];
+    const firstEntry=data.data[0];
+    const operator=data.data.find(d=>d.operator)?.operator||'Unknown';
+    const field=data.data.find(d=>d.fieldName)?.fieldName||'Unknown';
+    
+    let html=`<div style="color:#f5c542;font-weight:600;font-size:12px;margin-bottom:8px">📊 ${name} — Production Data</div>`;
+    html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">`;
+    html+=`<div style="background:#0d1117;padding:8px;border-radius:6px;border:1px solid #1a1a3e"><div style="font-size:10px;color:#888">Total ${label}</div><div style="font-size:16px;font-weight:700;color:#f5c542">${totalProd.toLocaleString()}</div></div>`;
+    html+=`<div style="background:#0d1117;padding:8px;border-radius:6px;border:1px solid #1a1a3e"><div style="font-size:10px;color:#888">Records</div><div style="font-size:16px;font-weight:700;color:#e0e0e0">${data.count}</div></div>`;
+    html+=`<div style="background:#0d1117;padding:8px;border-radius:6px;border:1px solid #1a1a3e"><div style="font-size:10px;color:#888">Period</div><div style="font-size:12px;color:#e0e0e0">${firstEntry.month} — ${lastEntry.month}</div></div>`;
+    html+=`<div style="background:#0d1117;padding:8px;border-radius:6px;border:1px solid #1a1a3e"><div style="font-size:10px;color:#888">Operator</div><div style="font-size:11px;color:#e0e0e0">${operator}</div></div>`;
+    html+=`</div>`;
+    
+    // Production table (last 24 months)
+    const recent=data.data.slice(-24).reverse();
+    html+=`<div style="font-size:11px;color:#888;margin-bottom:4px">Recent Production (last ${Math.min(24,data.data.length)} months)</div>`;
+    html+=`<div style="max-height:200px;overflow-y:auto;border:1px solid #1a1a3e;border-radius:6px">`;
+    html+=`<table style="width:100%;border-collapse:collapse;font-size:11px">`;
+    html+=`<tr style="position:sticky;top:0;background:#0d1117"><th style="padding:4px 6px;text-align:left;color:#888;border-bottom:1px solid #1a1a3e">Month</th><th style="padding:4px 6px;text-align:right;color:#888;border-bottom:1px solid #1a1a3e">${label}</th><th style="padding:4px 6px;text-align:right;color:#888;border-bottom:1px solid #1a1a3e">Wells</th></tr>`;
+    recent.forEach(d=>{
+      const vol=isOil?d.oilBBL:d.gasMCF;
+      html+=`<tr><td style="padding:3px 6px;color:#e0e0e0;border-bottom:1px solid #0a0a15">${d.month}</td><td style="padding:3px 6px;text-align:right;color:${isOil?'#4daf4a':'#e94560'};font-weight:600;border-bottom:1px solid #0a0a15">${vol.toLocaleString()}</td><td style="padding:3px 6px;text-align:right;color:#888;border-bottom:1px solid #0a0a15">${d.wellCount}</td></tr>`;
+    });
+    html+=`</table></div>`;
+    
+    container.innerHTML=html;
+  }catch(e){
+    container.innerHTML=`<div style="color:#e94560;font-size:12px">Error loading production: ${e.message}</div>`;
   }
 }
 
